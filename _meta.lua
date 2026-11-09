@@ -3,4 +3,5 @@ return {
     name = "pluginlauncher",
     fullname = _("PluginLauncher"),
     description = _([[A home screen for your plugins and apps instead of your books. Opens when KOReader starts.]]),
+    version = "1.0.0",
 }

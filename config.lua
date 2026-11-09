@@ -65,6 +65,10 @@ return {
     -- shortcuts below.
     show_plugins = true,
 
+    -- Where the Light / Wi-Fi / Files / Exit row goes: "top" (under the
+    -- header, harder to tap by accident) or "bottom".
+    system_row = "top",
+
     -- Seconds to wait after startup before PluginLauncher appears. Leave at 0
     -- unless another plugin draws over it when KOReader starts. Then try 1.
     startup_delay = 0,

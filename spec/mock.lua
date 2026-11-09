@@ -89,10 +89,16 @@ local TextWidget = WidgetContainer:extend{}
 function TextWidget:getSize() return { w = 10 * #self.text, h = 30 } end
 function TextWidget:setText(t) self.text = t end
 local TextBoxWidget = WidgetContainer:extend{}
+-- Rough wrapping: each character is as wide as the font size, each line 1.4x as tall.
 function TextBoxWidget:getSize()
-    local lines = 1
-    for _ in self.text:gmatch("\n") do lines = lines + 1 end
-    return { w = self.width, h = self.height or 30 * lines }
+    local size = (self.face and self.face[2] or 20) * 1.875
+    local per_line = math.max(1, math.floor(self.width / size))
+    local lines = 0
+    for part in (self.text .. "\n"):gmatch("(.-)\n") do
+        lines = lines + math.max(1, math.ceil(#part / per_line))
+    end
+    self.lines = lines
+    return { w = self.width, h = self.height or math.floor(lines * size * 1.4) }
 end
 function TextBoxWidget:free() end
 local IconWidget = WidgetContainer:extend{ name = "icon" }

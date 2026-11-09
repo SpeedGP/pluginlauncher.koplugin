@@ -10,7 +10,8 @@ two tabs:
 Long-press any tile to move it to the other tab or hide it. Hidden tiles go to
 a third tab, which only appears when something is hidden.
 
-A fixed bottom row has Light, Wi-Fi, Files and Exit. PluginLauncher opens
+A row of device controls (Light, Wi-Fi, Files, Exit) sits under the header,
+or at the bottom if config.lua says so. PluginLauncher opens
 when KOReader starts, and the "Show PluginLauncher" Dispatcher action reopens
 it (bind it to a gesture in Gesture manager).
 
@@ -126,7 +127,8 @@ local PLUGIN_ICONS = {
     wallabag = "bookmark-box-multiple-outline",
 }
 
--- For plugins not listed above: first keyword found in the name or label wins.
+-- For plugins not listed above: the first keyword that starts a word in the
+-- plugin's name or label wins ("Web Browser" -> web, but "restore" isn't "store").
 local KEYWORD_ICONS = {
     { "chess", "chess-knight" },
     { "sudoku", "grid" },
@@ -141,6 +143,20 @@ local KEYWORD_ICONS = {
     { "quiz", "brain" },
     { "trivia", "brain" },
     { "game", "gamepad-variant-outline" },
+    { "browser", "web" },
+    { "internet", "web" },
+    { "web", "web" },
+    { "store", "storefront-outline" },
+    { "shop", "storefront-outline" },
+    { "market", "storefront-outline" },
+    { "mail", "email-outline" },
+    { "map", "map-outline" },
+    { "wiki", "wikipedia" },
+    { "photo", "image-multiple-outline" },
+    { "gallery", "image-multiple-outline" },
+    { "image", "image-outline" },
+    { "podcast", "podcast" },
+    { "download", "download-outline" },
     { "claude", "creation" },
     { "assistant", "robot-outline" },
     { "chat", "chat-outline" },
@@ -338,6 +354,7 @@ local function defaultConfig()
         font_size = 20,
         startup_delay = 0,
         show_plugins = true,
+        system_row = "top",
         place = {},
         icons = {},
         shortcuts = {},
@@ -383,6 +400,11 @@ local function loadConfig(dir)
     end
     if user.show_plugins == false then
         config.show_plugins = false
+    end
+    if user.system_row == "top" or user.system_row == "bottom" then
+        config.system_row = user.system_row
+    elseif user.system_row ~= nil then
+        logger.warn("PluginLauncher: system_row must be \"top\" or \"bottom\"")
     end
     if type(user.place) == "table" then
         for k, v in pairs(user.place) do
@@ -466,7 +488,9 @@ local function menuText(entry)
         if ok then text = t end
     end
     if type(text) ~= "string" then return nil end
-    text = text:gsub("^%s+", ""):gsub("%s+$", "")
+    -- Menu entries that open a dialog end in "…" by KOReader convention;
+    -- that reads as "cut off" on a tile, so drop it.
+    text = text:gsub("^%s+", ""):gsub("%s+$", ""):gsub("%s*…$", ""):gsub("%s*%.%.%.$", "")
     return text ~= "" and text or nil
 end
 
@@ -600,9 +624,8 @@ function Tile:init()
 
     local content
     if self.style == "tile" and self.icon_file then
-        local icon_size = math.floor(math.min(inner_h * 0.5, inner_w * 0.45))
         local gap = Screen:scaleBySize(6)
-        local text_h = inner_h - icon_size - gap
+        local icon_size = math.floor(math.min(inner_h * 0.5, inner_w * 0.45))
         local label = TextBoxWidget:new{
             text = self.text,
             face = face,
@@ -611,7 +634,13 @@ function Tile:init()
             alignment = "center",
             fgcolor = fg,
         }
-        if label:getSize().h > text_h then
+        local label_h = label:getSize().h
+        -- A long name wraps: shrink the icon to make room before cutting it off.
+        if label_h + gap + icon_size > inner_h then
+            icon_size = math.max(math.floor(inner_h * 0.28), inner_h - gap - label_h)
+        end
+        local text_h = inner_h - icon_size - gap
+        if label_h > text_h then
             label:free()
             label = TextBoxWidget:new{
                 text = self.text,
@@ -781,7 +810,7 @@ function LauncherWidget:iconFor(item)
     add(item.plugin_name and PLUGIN_ICONS[item.plugin_name])
     local haystack = ((item.plugin_name or "") .. " " .. item.label):lower()
     for _i, pair in ipairs(KEYWORD_ICONS) do
-        if haystack:find(pair[1], 1, true) then
+        if haystack:find("%f[%w]" .. pair[1]) then
             add(pair[2])
             break
         end
@@ -1038,8 +1067,35 @@ function LauncherWidget:buildLayout()
     local sys_h = Screen:scaleBySize(70)
     local system_row = self:makeTileRow(self:getSystemItems(), 4, inner_w, sys_h, gap, "row", math.max(14, font_size - 2))
 
+    -- Both arrangements use the same pieces, so the grid gets the same height.
     local grid_h = inner_h - header_h - line_h - gap - tab_h - gap - gap - line_h - gap - sys_h
     local grid = self:makeGrid(inner_w, grid_h, gap, font_size)
+
+    local content = VerticalGroup:new{ align = "center" }
+    local function add(widget) table.insert(content, widget) end
+    local function space() add(VerticalSpan:new{ width = gap }) end
+    add(self.header_slot)
+    add(separator())
+    space()
+    if self.config.system_row == "top" then
+        -- Default: the device controls sit under the header, away from the
+        -- bottom edge where a resting palm or pen can tap them by accident.
+        add(system_row)
+        space()
+        add(separator())
+        space()
+        add(tabs)
+        space()
+        add(grid)
+    else
+        add(tabs)
+        space()
+        add(grid)
+        space()
+        add(separator())
+        space()
+        add(system_row)
+    end
 
     self[1] = FrameContainer:new{
         width = sw,
@@ -1048,19 +1104,7 @@ function LauncherWidget:buildLayout()
         bordersize = 0,
         margin = 0,
         background = COLOR_WHITE,
-        VerticalGroup:new{
-            align = "center",
-            self.header_slot,
-            separator(),
-            VerticalSpan:new{ width = gap },
-            tabs,
-            VerticalSpan:new{ width = gap },
-            grid,
-            VerticalSpan:new{ width = gap },
-            separator(),
-            VerticalSpan:new{ width = gap },
-            system_row,
-        },
+        content,
     }
 end
 

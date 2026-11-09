@@ -14,7 +14,10 @@ chatting with an AI assistant, playing games, or running tools.
 - **Built-in** tab: the plugins that ship with KOReader.
 - **Hidden** tab: only appears once you've hidden something.
 - Header: a title, plus Wi-Fi, frontlight, battery and the time.
-- Bottom row: **Light**, **Wi-Fi**, **Files** (the normal file browser) and **Exit** (restart or exit KOReader).
+- Device controls under the header: **Light**, **Wi-Fi**, **Files** (the
+  normal file browser) and **Exit** (restart or exit KOReader). They're at the
+  top so a resting palm or pen can't tap them by accident; `config.lua` can
+  move them to the bottom.
 
 Tap a tile to open that plugin's menu, the same one it has under Tools. If a
 plugin has just one action, tapping runs it straight away.
@@ -75,7 +78,8 @@ file. You can set:
   instead of opening a plugin's menu. They can run a Dispatcher action (the
   same actions Gesture manager offers), call a plugin method, send an event, or
   run any Lua.
-- **Columns** (default 3), **label size** and the **title**.
+- **Columns** (default 3), **label size**, the **title**, and whether the
+  device controls go at the **top or bottom**.
 - **Icons** for any plugin or shortcut.
 - **Default tab** for specific plugins (`apps`, `builtin` or `hidden`).
 

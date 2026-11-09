@@ -196,9 +196,10 @@ check(P.koassistant.submenu_builds == 0, "KOAssistant's sub-menu not built while
 check(hasDivider(w), "divider between shortcuts and plugins")
 check(find("Chess\n(not available here)") and not find("Chess\n(not available here)").enabled, "disabled menu entry greyed")
 local t_apps = tiles()
--- layout order: tabs (2), shortcuts (4), plugins A-Z, system row (4)
-check(t_apps[3].text == "Chat" and t_apps[7].text:find("^Chess") and t_apps[8].text == "KOAssistant"
-      and t_apps[9].text == "Widgetizer" and t_apps[10].text == "Zen UI", "shortcuts first, then plugins A-Z: " .. apps)
+-- layout order (system row at the top by default): system (4), tabs (2), shortcuts (4), plugins A-Z
+check(t_apps[1].text == "Light" and t_apps[4].text == "Exit" and t_apps[5].text == "Apps"
+      and t_apps[7].text == "Chat" and t_apps[11].text:find("^Chess") and t_apps[12].text == "KOAssistant"
+      and t_apps[13].text == "Widgetizer" and t_apps[14].text == "Zen UI", "controls, tabs, shortcuts, then plugins A-Z: " .. apps)
 tap("KOAssistant", true)
 local tm = M.touchmenus[#M.touchmenus]
 check(tm and tm.tab_item_table[1][1].text == "General chat" and P.koassistant.submenu_builds == 1, "tap opens plugin menu in TouchMenu")
@@ -467,6 +468,58 @@ for cols = 1, 6 do
     end
 end
 check(bad == 0, "layout sweep: " .. bad .. " bad layouts")
+
+-----------------------------------------------------------------------------
+print("12. Names, icons from names, and where the device controls go")
+local function simplePlugin(name, text)
+    local p = M.WidgetContainer:new{ fullname = text }
+    function p:addToMainMenu(mi) mi[name] = { text = text, callback = function() end } end
+    return p
+end
+fm = boot(pluginDir(), {
+    webbrowser = simplePlugin("webbrowser", "Web Browser"),
+    storefront = simplePlugin("storefront", "Storefront"),
+    backuptool = simplePlugin("backuptool", "Restore backups"),
+    inkaway = simplePlugin("inkaway", "Ink Away…"),
+    dots = simplePlugin("dots", "Dots..."),
+    longname = simplePlugin("longname", "Extraordinarily Long Plugin Name Here"),
+})
+check(iconOf("Web Browser") == "web", "browser gets the globe: " .. tostring(iconOf("Web Browser")))
+check(iconOf("Storefront") == "storefront-outline", "store gets a storefront: " .. tostring(iconOf("Storefront")))
+check(iconOf("Restore backups") == "puzzle-outline", "'restore' doesn't match 'store': " .. tostring(iconOf("Restore backups")))
+check(find("Ink Away", true) ~= nil and find("Dots", true) ~= nil, "trailing … and ... dropped from menu names: " .. labels())
+local long = find("Extraordinarily Long Plugin Name Here", true)
+local function partsOf(tile)
+    local group = tile[1][1][1] -- frame > center > vertical group
+    return group[1], group[3] -- icon, label
+end
+local icon, label = partsOf(long)
+local _, short_label = partsOf(find("Storefront", true))
+local short_icon = partsOf(find("Storefront", true))
+label:getSize()
+check((label.lines or 0) >= 2 and label.height == nil, "long name wraps onto more lines without being cut off")
+check(icon.width < short_icon.width, ("icon shrinks to make room (%d < %d)"):format(icon.width, short_icon.width))
+local inner_h = long.height - 2 * (4 + math.floor(6 * 1.875 + 0.5))
+check(icon.height + math.floor(6 * 1.875 + 0.5) + label:getSize().h <= inner_h, "icon and two-line name fit inside the tile")
+short_label:getSize()
+check(short_label.lines == 1, "short names stay on one line")
+-- system row position
+fm = boot(pluginDir([[return { system_row = "bottom" }]]))
+local tl = tiles()
+check(tl[1].text == "Apps" and tl[#tl].text == "Exit" and tl[#tl - 3].text == "Light", "system_row = \"bottom\" puts the controls last")
+check(contentHeight(launcher()) == 2480, "bottom layout fills the screen")
+fm = boot(pluginDir([[return { system_row = "sideways" }]]))
+check(tiles()[1].text == "Light" and logHas("system_row must be"), "invalid system_row warns and keeps the top")
+bad = 0
+for _, pos in ipairs{ "top", "bottom" } do
+    for cols = 1, 6 do
+        for count = 0, 30, 5 do
+            fm = boot(pluginDir(("return { columns = %d, system_row = %q }"):format(cols, pos)), manyPlugins(count))
+            if contentHeight(launcher()) ~= 2480 then bad = bad + 1 end
+        end
+    end
+end
+check(bad == 0, "both positions fill the screen at every size: " .. bad .. " bad")
 
 print(("\n%d passed, %d failed"):format(pass, fail))
 os.execute("rm -rf " .. TMP)
