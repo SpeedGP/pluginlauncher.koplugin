@@ -6,6 +6,10 @@ PluginLauncher opens when KOReader starts and shows a tile, with an icon, for
 every installed plugin. It's handy on devices you use for more than reading:
 chatting with an AI assistant, playing games, or running tools.
 
+<p align="center">
+  <img src="screenshots/apps.jpg" width="480" alt="PluginLauncher on a Kindle Scribe: shortcut tiles for chat, a divider, then plugin tiles such as an AI assistant, a chess game and a web browser, with Light, Wi-Fi, Files and Exit along the bottom">
+</p>
+
 - **Apps** tab: your shortcuts, a thin divider, then every plugin you installed, A–Z.
 - **Built-in** tab: the plugins that ship with KOReader.
 - **Hidden** tab: only appears once you've hidden something.
