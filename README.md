@@ -7,7 +7,7 @@ every installed plugin. It's handy on devices you use for more than reading:
 chatting with an AI assistant, playing games, or running tools.
 
 <p align="center">
-  <img src="screenshots/apps.jpg" width="480" alt="PluginLauncher on a Kindle Scribe: shortcut tiles for chat, a divider, then plugin tiles such as an AI assistant, a chess game and a web browser, with Light, Wi-Fi, Files and Exit along the bottom">
+  <img src="screenshots/apps.jpg" width="480" alt="PluginLauncher on a Kindle Scribe: Light, Wi-Fi, Files and Exit under the header, then Apps and Built-in tabs, shortcut tiles for chat, a divider, and plugin tiles such as an AI assistant, a chess game, a store and a web browser">
 </p>
 
 - **Apps** tab: your shortcuts, a thin divider, then every plugin you installed, A–Z.
